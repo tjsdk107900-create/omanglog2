@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
   Bell,
@@ -88,6 +88,8 @@ const ranks = [
   ['#민망', '501'],
 ];
 
+const recordTags = ['#일상망함', '#학교', '#일', '#연애', '#돈', '#지각'];
+
 function Mascot({ mood = 'neutral', label }) {
   return (
     <div className={`mascot mascot-${mood}`} aria-label={label ?? '오망로그 캐릭터'}>
@@ -115,7 +117,7 @@ function SketchCard({ text }) {
   );
 }
 
-function LeftRail() {
+function LeftRail({ onRecordClick }) {
   return (
     <aside className="left-rail">
       <div className="brand">
@@ -123,7 +125,7 @@ function LeftRail() {
         <span>OMANG LOG</span>
       </div>
 
-      <button className="record-button">
+      <button className="record-button" onClick={onRecordClick} aria-label="망함 기록하기">
         <Plus size={24} />
         망함 기록하기
         <span className="badge">3초 컷!</span>
@@ -239,7 +241,7 @@ function Hero() {
   );
 }
 
-function Feed() {
+function Feed({ posts, latestPostId }) {
   return (
     <main className="feed-column">
       <Hero />
@@ -253,8 +255,8 @@ function Feed() {
         </button>
       </div>
       <div className="post-list">
-        {feedPosts.map((post) => (
-          <article className="post panel" key={post.name + post.time}>
+        {posts.map((post) => (
+          <article className={`post panel${post.id === latestPostId ? ' is-new' : ''}`} key={post.id ?? post.name + post.time}>
             <div className="post-body">
               <Mascot mood="mini" />
               <div className="post-copy">
@@ -396,18 +398,170 @@ function RightRail() {
   );
 }
 
+function QuickRecordSheet({ isOpen, onClose, onSubmit }) {
+  const inputRef = useRef(null);
+  const [text, setText] = useState('');
+  const [tag, setTag] = useState(recordTags[0]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const focusInput = () => {
+      inputRef.current?.focus({ preventScroll: true });
+      inputRef.current?.setSelectionRange?.(inputRef.current.value.length, inputRef.current.value.length);
+    };
+    focusInput();
+    const animationFrame = window.requestAnimationFrame(focusInput);
+    const focusTimer = window.setTimeout(focusInput, 120);
+    return () => {
+      window.cancelAnimationFrame(animationFrame);
+      window.clearTimeout(focusTimer);
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen) return;
+    const resetTimer = window.setTimeout(() => {
+      setText('');
+      setTag(recordTags[0]);
+    }, 160);
+    return () => window.clearTimeout(resetTimer);
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  const canSubmit = text.trim().length > 0;
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    if (!canSubmit) return;
+    onSubmit({
+      id: `post-${Date.now()}`,
+      name: '나의 망함',
+      time: '방금',
+      title: text.trim(),
+      body: '그래도 기록했으니 오늘은 통과.',
+      tags: [tag],
+      laugh: 0,
+      tap: 0,
+      comments: 0,
+      sketch: '망함 기록 완료',
+    });
+  };
+
+  return (
+    <div className="sheet-layer" role="presentation">
+      <button className="sheet-scrim" aria-label="닫기" onClick={onClose} />
+      <form className="record-sheet" onSubmit={handleSubmit} role="dialog" aria-modal="true" aria-label="망함 기록">
+        <div className="sheet-handle" />
+        <div className="sheet-title">
+          <div>
+            <strong>지금 망함 기록</strong>
+            <span>쓰고, 태그 하나 고르면 바로 완료</span>
+          </div>
+          <button className="icon-only sheet-close" type="button" aria-label="닫기" onClick={onClose}>
+            <X size={22} />
+          </button>
+        </div>
+        <textarea
+          ref={inputRef}
+          className="record-input"
+          value={text}
+          onChange={(event) => setText(event.target.value)}
+          placeholder="방금 뭐가 망했나요?"
+          rows={4}
+          maxLength={120}
+          autoFocus
+          enterKeyHint="done"
+          onKeyDown={(event) => {
+            if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+              handleSubmit(event);
+            }
+          }}
+        />
+        <div className="tag-row" aria-label="태그 선택">
+          {recordTags.map((item) => (
+            <button
+              key={item}
+              className={item === tag ? 'active' : ''}
+              type="button"
+              onClick={() => setTag(item)}
+            >
+              {item}
+            </button>
+          ))}
+        </div>
+        <button className="submit-record" type="submit" disabled={!canSubmit}>
+          망함 기록하기
+        </button>
+      </form>
+    </div>
+  );
+}
+
+function QuickCompleteDialog({ isOpen, onConfirm }) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="retro-dialog-layer" role="presentation">
+      <div className="retro-dialog" role="alertdialog" aria-modal="true" aria-label="망함 기록 완료">
+        <div className="retro-title">
+          <span>OMANG LOG</span>
+          <button aria-label="확인" onClick={onConfirm}>x</button>
+        </div>
+        <section>
+          <Mascot mood="pixel" />
+          <p><b>망함 기록 완료!</b><br />피드에 바로 올릴게요.</p>
+          <button onClick={onConfirm}>확인</button>
+        </section>
+      </div>
+    </div>
+  );
+}
+
 function App() {
+  const [posts, setPosts] = useState(feedPosts);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [pendingPost, setPendingPost] = useState(null);
+  const [isCompleteOpen, setIsCompleteOpen] = useState(false);
+  const [latestPostId, setLatestPostId] = useState(null);
+
+  const orderedPosts = useMemo(() => posts, [posts]);
+
+  const handleSubmitRecord = (post) => {
+    setPendingPost(post);
+    setIsSheetOpen(false);
+    window.setTimeout(() => setIsCompleteOpen(true), 90);
+  };
+
+  const handleConfirmComplete = () => {
+    if (pendingPost) {
+      setPosts((currentPosts) => [pendingPost, ...currentPosts]);
+      setLatestPostId(pendingPost.id);
+      window.requestAnimationFrame(() => {
+        document.querySelector('.post-list')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      });
+    }
+    setPendingPost(null);
+    setIsCompleteOpen(false);
+  };
+
   return (
     <div className="app-shell">
-      <LeftRail />
+      <LeftRail onRecordClick={() => setIsSheetOpen(true)} />
       <div className="content">
         <Header />
         <div className="dashboard">
-          <Feed />
+          <Feed posts={orderedPosts} latestPostId={latestPostId} />
           <StatsColumn />
           <RightRail />
         </div>
       </div>
+      <QuickRecordSheet
+        isOpen={isSheetOpen}
+        onClose={() => setIsSheetOpen(false)}
+        onSubmit={handleSubmitRecord}
+      />
+      <QuickCompleteDialog isOpen={isCompleteOpen} onConfirm={handleConfirmComplete} />
     </div>
   );
 }
