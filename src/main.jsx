@@ -7,6 +7,7 @@ import {
   Copy,
   Crown,
   Link,
+  Menu,
   MessageCircle,
   MoreHorizontal,
   Plus,
@@ -88,7 +89,21 @@ const ranks = [
   ['#민망', '501'],
 ];
 
-const recordTags = ['#일상망함', '#학교', '#일', '#연애', '#돈', '#지각'];
+const recordTags = ['#소비', '#실수', '#키피아웃', '#지각', '#다이어트실패', '#유머망함'];
+const failLevels = ['😐', '😬', '😵', '😭', '💀'];
+
+const onboardingPreviewPosts = [
+  {
+    title: '회의 10분 전에 발표 자료 저장 안 한 걸 발견함',
+    body: '파일명은 최종_진짜최종이었는데 정작 내용은 첫 장뿐...',
+    tag: '#업무망함',
+  },
+  {
+    title: '버스 문 닫히는 순간 카드 찍고 서 있었음',
+    body: '기사님이랑 눈 마주치고 둘 다 아무 말도 못 했다.',
+    tag: '#지각확정',
+  },
+];
 
 function Mascot({ mood = 'neutral', label }) {
   return (
@@ -101,6 +116,48 @@ function Mascot({ mood = 'neutral', label }) {
         <span className="mouth" />
       </span>
     </div>
+  );
+}
+
+function OnboardingScreen({ onStart, onLogin }) {
+  return (
+    <main className="onboarding-screen">
+      <header className="onboarding-logo" aria-label="오망로그">
+        <Mascot mood="dizzy" label="XX눈 캐릭터" />
+        <strong>오망로그</strong>
+      </header>
+
+      <section className="onboarding-hero" aria-labelledby="onboarding-title">
+        <div>
+          <h1 id="onboarding-title">오늘도 망한 사람들 모여라</h1>
+          <p>익명으로 가볍게 구경해봐!</p>
+        </div>
+
+        <div className="onboarding-preview" aria-label="피드 미리보기">
+          {onboardingPreviewPosts.map((post) => (
+            <article className="onboarding-card" key={post.title}>
+              <div className="onboarding-card-head">
+                <Mascot mood="mini" />
+                <div>
+                  <b>익명 망한 사람</b>
+                  <span>방금</span>
+                </div>
+              </div>
+              <h2>{post.title}</h2>
+              <p>{post.body}</p>
+              <em>{post.tag}</em>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <footer className="onboarding-actions">
+        <button type="button" onClick={onStart}>1초 만에 내 망함 기록하기</button>
+        <button className="onboarding-login" type="button" onClick={onLogin}>
+          로그인하고 더 많은 기능 이용하기
+        </button>
+      </footer>
+    </main>
   );
 }
 
@@ -398,10 +455,95 @@ function RightRail() {
   );
 }
 
+function RecordInputScreen({
+  inputRef,
+  text,
+  setText,
+  tag,
+  setTag,
+  failLevel,
+  setFailLevel,
+  canSubmit,
+  onClose,
+  onSubmit,
+}) {
+  return (
+    <div className="sheet-layer" role="presentation">
+      <form className="record-sheet" onSubmit={onSubmit} role="dialog" aria-modal="true" aria-label="망함 기록">
+        <header className="record-topbar">
+          <button className="icon-only record-menu" type="button" aria-label="메뉴" onClick={onClose}>
+            <Menu size={25} />
+          </button>
+          <strong>오망로그</strong>
+          <span aria-hidden="true" />
+        </header>
+
+        <div className="record-question">
+          <h2>오늘 뭐가 망했냐?</h2>
+        </div>
+
+        <textarea
+          ref={inputRef}
+          className="record-input"
+          value={text}
+          onChange={(event) => setText(event.target.value)}
+          placeholder="ex) 커피 쏟음, 늦잠, 과소비..."
+          rows={4}
+          maxLength={120}
+          autoFocus
+          enterKeyHint="done"
+          onKeyDown={(event) => {
+            if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+              onSubmit(event);
+            }
+          }}
+        />
+
+        <div className="tag-row" aria-label="태그 선택">
+          {recordTags.map((item) => (
+            <button
+              key={item}
+              className={item === tag ? 'active' : ''}
+              type="button"
+              onClick={() => setTag(item)}
+            >
+              {item}
+            </button>
+          ))}
+        </div>
+
+        <section className="fail-level" aria-label="망함 지수 선택">
+          <span>망함 지수 선택</span>
+          <div>
+            {failLevels.map((emoji, index) => (
+              <button
+                key={emoji}
+                className={failLevel === index ? 'active' : ''}
+                type="button"
+                aria-label={`망함 지수 ${index + 1}단계`}
+                onClick={() => setFailLevel(index)}
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <button className="add-tag-button" type="button">+ 직접 입력 태그 추가</button>
+
+        <button className="submit-record" type="submit" disabled={!canSubmit}>
+          망함 기록하기
+        </button>
+      </form>
+    </div>
+  );
+}
+
 function QuickRecordSheet({ isOpen, onClose, onSubmit }) {
   const inputRef = useRef(null);
   const [text, setText] = useState('');
   const [tag, setTag] = useState(recordTags[0]);
+  const [failLevel, setFailLevel] = useState(2);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -423,6 +565,7 @@ function QuickRecordSheet({ isOpen, onClose, onSubmit }) {
     const resetTimer = window.setTimeout(() => {
       setText('');
       setTag(recordTags[0]);
+      setFailLevel(2);
     }, 160);
     return () => window.clearTimeout(resetTimer);
   }, [isOpen]);
@@ -441,12 +584,27 @@ function QuickRecordSheet({ isOpen, onClose, onSubmit }) {
       title: text.trim(),
       body: '그래도 기록했으니 오늘은 통과.',
       tags: [tag],
-      laugh: 0,
+      laugh: failLevel + 1,
       tap: 0,
       comments: 0,
       sketch: '망함 기록 완료',
     });
   };
+
+  return (
+    <RecordInputScreen
+      inputRef={inputRef}
+      text={text}
+      setText={setText}
+      tag={tag}
+      setTag={setTag}
+      failLevel={failLevel}
+      setFailLevel={setFailLevel}
+      canSubmit={canSubmit}
+      onClose={onClose}
+      onSubmit={handleSubmit}
+    />
+  );
 
   return (
     <div className="sheet-layer" role="presentation">
@@ -503,14 +661,14 @@ function QuickCompleteDialog({ isOpen, onConfirm }) {
 
   return (
     <div className="retro-dialog-layer" role="presentation">
-      <div className="retro-dialog" role="alertdialog" aria-modal="true" aria-label="망함 기록 완료">
+      <div className="retro-dialog" role="alertdialog" aria-modal="true" aria-label="OOPS popup">
         <div className="retro-title">
-          <span>OMANG LOG</span>
-          <button aria-label="확인" onClick={onConfirm}>x</button>
+          <span>OOPS!</span>
+          <button aria-label="닫기" onClick={onConfirm}>X</button>
         </div>
         <section>
-          <Mascot mood="pixel" />
-          <p><b>망함 기록 완료!</b><br />피드에 바로 올릴게요.</p>
+          <div className="retro-emoji" aria-hidden="true">૮₍ ´ ꒳ `₎ა</div>
+          <p><b>망함 기록 완료!</b><br />방금 쓴 오망을 피드에 올릴게요.</p>
           <button onClick={onConfirm}>확인</button>
         </section>
       </div>
@@ -520,6 +678,7 @@ function QuickCompleteDialog({ isOpen, onConfirm }) {
 
 function App() {
   const [posts, setPosts] = useState(feedPosts);
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [pendingPost, setPendingPost] = useState(null);
   const [isCompleteOpen, setIsCompleteOpen] = useState(false);
@@ -544,6 +703,20 @@ function App() {
     setPendingPost(null);
     setIsCompleteOpen(false);
   };
+
+  if (!hasCompletedOnboarding) {
+    return (
+      <>
+        <OnboardingScreen
+          onStart={() => {
+            setHasCompletedOnboarding(true);
+            setIsSheetOpen(true);
+          }}
+          onLogin={() => setHasCompletedOnboarding(true)}
+        />
+      </>
+    );
+  }
 
   return (
     <div className="app-shell">
