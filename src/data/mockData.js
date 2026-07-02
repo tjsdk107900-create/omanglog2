@@ -1,0 +1,60 @@
+export const tags = ['#지각', '#업무망함', '#커피실수', '#소비실패', '#회의', '#멘탈'];
+
+export const failLevels = [
+  { value: 1, label: '살짝', emoji: '😐' },
+  { value: 2, label: '삐끗', emoji: '😟' },
+  { value: 3, label: '망함', emoji: '😵' },
+  { value: 4, label: '대형', emoji: '😭' },
+  { value: 5, label: '전설', emoji: '💥' },
+];
+
+export const initialPosts = [
+  {
+    id: 'post-1',
+    author: '익명의 망한 사람',
+    time: '10분 전',
+    title: '발표 자료 최종 파일을 잘못 올렸다',
+    body: '최종_진짜최종 파일인 줄 알았는데 지난주 버전이었다. 그래도 기록했으니 오늘은 통과.',
+    tags: ['#업무망함', '#회의'],
+    level: 4,
+    empathy: 56,
+    comments: 7,
+    cardText: '발표 10분 전 파일명부터 망함',
+  },
+  {
+    id: 'post-2',
+    author: '카페인 과몰입',
+    time: '25분 전',
+    title: '커피를 두 잔 주문하고 둘 다 쏟았다',
+    body: '한 잔은 책상 위, 한 잔은 마음속으로 보냈다. 오늘의 오망 지수는 꽤 높다.',
+    tags: ['#커피실수', '#소비실패'],
+    level: 5,
+    empathy: 81,
+    comments: 12,
+    cardText: '커피 두 잔, 멘탈 0잔',
+  },
+  {
+    id: 'post-3',
+    author: '출근길 생존자',
+    time: '37분 전',
+    title: '버스 문 앞에서 교통카드를 못 찾았다',
+    body: '뒤에 줄이 길어지는 소리가 들렸다. 그래도 결국 찾았다. 주머니 말고 가방 안쪽에 있었다.',
+    tags: ['#지각', '#멘탈'],
+    level: 3,
+    empathy: 44,
+    comments: 5,
+    cardText: '카드는 없고 땀만 남음',
+  },
+  {
+    id: 'post-4',
+    author: '점심 실패단',
+    time: '1시간 전',
+    title: '점심 메뉴를 골랐는데 전원 반대',
+    body: '고민 끝에 골랐는데 아무도 동의하지 않았다. 내 취향만 또렷하게 확인했다.',
+    tags: ['#회의', '#멘탈'],
+    level: 2,
+    empathy: 23,
+    comments: 3,
+    cardText: '메뉴 선정 실패',
+  },
+];
