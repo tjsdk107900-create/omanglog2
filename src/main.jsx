@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Route, Routes, useNavigate } from 'react-router-dom';
+import './lib/supabase.js';
 import AppLayout from './components/AppLayout.jsx';
 import { initialPosts } from './data/mockData.js';
 import FeedPage from './pages/FeedPage.jsx';
