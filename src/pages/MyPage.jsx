@@ -1,17 +1,24 @@
 import PostCard from '../components/PostCard.jsx';
 import Mascot from '../components/Mascot.jsx';
+import { useAuth } from '../contexts/AuthContext.jsx';
 
 export default function MyPage({ posts }) {
+  const { user, profile, signOut } = useAuth();
+
   return (
     <main className="page-shell mypage-grid">
       <section className="panel profile-card">
-        <Mascot mood="neutral" />
+        {profile?.profile_image ? (
+          <img className="profile-avatar" src={profile.profile_image} alt="프로필 이미지" />
+        ) : (
+          <Mascot mood="neutral" />
+        )}
         <div>
           <p className="eyebrow">PROFILE</p>
-          <h2>익명의 오망러</h2>
-          <p>아직 로그인 연동 전이라 더미 프로필을 표시합니다.</p>
+          <h2>{profile?.nickname || user?.email || '오망로그 사용자'}</h2>
+          <p>{user?.email}</p>
         </div>
-        <button type="button">로그아웃</button>
+        <button type="button" onClick={signOut}>로그아웃</button>
       </section>
 
       <section>

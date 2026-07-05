@@ -1,5 +1,6 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { Bell, Home, LineChart, Menu, PenLine, Search, Trophy, UserRound } from 'lucide-react';
+import { Bell, Home, LineChart, LogOut, Menu, PenLine, Search, Trophy, UserRound } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext.jsx';
 import Mascot from './Mascot.jsx';
 
 const navItems = [
@@ -12,6 +13,12 @@ const navItems = [
 
 export default function AppLayout() {
   const navigate = useNavigate();
+  const { signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/login', { replace: true });
+  };
 
   return (
     <div className="app-shell">
@@ -64,6 +71,9 @@ export default function AppLayout() {
             </button>
             <button className="avatar icon-only" type="button" onClick={() => navigate('/mypage')} aria-label="프로필">
               <Mascot mood="mini" />
+            </button>
+            <button className="logout-button icon-only" type="button" onClick={handleSignOut} aria-label="로그아웃">
+              <LogOut size={22} />
             </button>
           </div>
         </header>
