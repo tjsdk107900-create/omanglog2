@@ -1,6 +1,12 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Bell, Home, LineChart, LogOut, Menu, PenLine, Search, Trophy, UserRound } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext.jsx';
+import {
+  fetchUnreadNotificationCount,
+  subscribeToNotifications,
+  unsubscribeFromNotifications,
+} from '../lib/notifications.js';
 import Mascot from './Mascot.jsx';
 
 const navItems = [
@@ -13,11 +19,67 @@ const navItems = [
 
 export default function AppLayout() {
   const navigate = useNavigate();
-  const { signOut } = useAuth();
+  const location = useLocation();
+  const { user, signOut } = useAuth();
+  const initialQuery = location.pathname === '/search'
+    ? new URLSearchParams(location.search).get('q') ?? ''
+    : '';
+  const [searchQuery, setSearchQuery] = useState(initialQuery);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    setSearchQuery(initialQuery);
+  }, [initialQuery]);
 
   const handleSignOut = async () => {
     await signOut();
     navigate('/login', { replace: true });
+  };
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadUnreadCount() {
+      if (!user?.id) {
+        setUnreadCount(0);
+        return;
+      }
+
+      try {
+        const nextCount = await fetchUnreadNotificationCount(user.id);
+        if (mounted) setUnreadCount(nextCount);
+      } catch (error) {
+        console.warn('[Supabase] unread notifications load failed', error);
+        if (mounted) setUnreadCount(0);
+      }
+    }
+
+    loadUnreadCount();
+    window.addEventListener('notifications:changed', loadUnreadCount);
+
+    if (!user?.id) return () => {
+      mounted = false;
+      window.removeEventListener('notifications:changed', loadUnreadCount);
+    };
+
+    const channel = subscribeToNotifications(user.id, () => {
+      loadUnreadCount();
+    });
+
+    return () => {
+      mounted = false;
+      window.removeEventListener('notifications:changed', loadUnreadCount);
+      unsubscribeFromNotifications(channel).catch((error) => {
+        console.warn('[Supabase] notifications unsubscribe failed', error);
+      });
+    };
+  }, [user?.id]);
+
+  const handleSearchSubmit = (event) => {
+    event.preventDefault();
+    const query = searchQuery.trim();
+    if (!query) return;
+    navigate(`/search?q=${encodeURIComponent(query)}`);
   };
 
   return (
@@ -61,13 +123,17 @@ export default function AppLayout() {
       <div className="content">
         <header className="top-nav compact-top-nav">
           <div className="top-tools">
-            <label className="search">
+            <form className="search" onSubmit={handleSearchSubmit}>
               <Search size={18} />
-              <input placeholder="태그, 키워드 검색" />
-            </label>
-            <button className="bell icon-only" type="button" aria-label="알림">
+              <input
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="태그, 키워드 검색"
+              />
+            </form>
+            <button className="bell icon-only" type="button" onClick={() => navigate('/notifications')} aria-label="알림">
               <Bell size={24} />
-              <span>2</span>
+              {unreadCount ? <span>{unreadCount > 99 ? '99+' : unreadCount}</span> : null}
             </button>
             <button className="avatar icon-only" type="button" onClick={() => navigate('/mypage')} aria-label="프로필">
               <Mascot mood="mini" />

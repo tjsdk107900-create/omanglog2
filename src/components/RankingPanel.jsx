@@ -1,4 +1,6 @@
 import { Crown } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { formatTagLabel, getTagRoute } from '../lib/tags.js';
 
 export default function RankingPanel({ posts, mode = 'tag' }) {
   const items = mode === 'empathy'
@@ -19,7 +21,9 @@ export default function RankingPanel({ posts, mode = 'tag' }) {
         {items.slice(0, 5).map(([label, count], index) => (
           <li key={label}>
             <span>{index + 1}</span>
-            <b>{label}</b>
+            <b>
+              {mode === 'tag' ? <Link to={getTagRoute(label)}>{formatTagLabel(label)}</Link> : label}
+            </b>
             <em>{count}</em>
           </li>
         ))}

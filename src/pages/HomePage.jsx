@@ -2,9 +2,20 @@ import { Link } from 'react-router-dom';
 import { Sparkles } from 'lucide-react';
 import Mascot from '../components/Mascot.jsx';
 import PostCard from '../components/PostCard.jsx';
+import PostListState from '../components/PostListState.jsx';
 import { TagTopFive, WeeklySummary } from '../components/SummaryCards.jsx';
 
-export default function HomePage({ posts }) {
+export default function HomePage({
+  posts,
+  postsLoading,
+  postsError,
+  onRetryPosts,
+  onToggleLike,
+  likePendingByPostId,
+  currentUserId,
+  onDeletePost,
+  postActionPendingByPostId,
+}) {
   return (
     <main className="dashboard home-dashboard">
       <section className="feed-column">
@@ -20,7 +31,7 @@ export default function HomePage({ posts }) {
             </div>
           </div>
           <div className="hero-copy">
-            <h2>괜찮아, 오늘도 조금 망했을 뿐.</h2>
+            <h2>괜찮아, 오늘도 조금 망했을 뿐</h2>
             <p>오망로그에 기록하면 내일은 웃으면서 볼 수 있어요.</p>
             <div className="dots"><span className="active" /><span /><span /><span /></div>
           </div>
@@ -41,7 +52,26 @@ export default function HomePage({ posts }) {
             <Link to="/feed">전체 보기</Link>
           </div>
           <div className="post-list">
-            {posts.slice(0, 2).map((post) => <PostCard key={post.id} post={post} compact />)}
+            <PostListState
+              loading={postsLoading}
+              error={postsError}
+              empty={!posts.length}
+              onRetry={onRetryPosts}
+            />
+            {!postsLoading && !postsError
+              ? posts.slice(0, 2).map((post) => (
+                <PostCard
+                  key={post.id}
+                  post={post}
+                  compact
+                  onToggleLike={onToggleLike}
+                  likePending={Boolean(likePendingByPostId[post.id])}
+                  currentUserId={currentUserId}
+                  onDeletePost={onDeletePost}
+                  postActionPending={Boolean(postActionPendingByPostId[post.id])}
+                />
+              ))
+              : null}
           </div>
         </section>
       </section>
